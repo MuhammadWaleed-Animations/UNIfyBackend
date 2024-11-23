@@ -48,11 +48,88 @@ exports.login = async (req, res) => {
 
   
 
+// // Create User with Profile Picture
+// exports.createUser = async (req, res) => {
+//   try {
+//     const { username, email, password, contactInfo, organization } = req.body;
+//     const profilePicture = req.file ? req.file.path : null; // Path of the uploaded file
+
+//     // Check if the email or username already exists
+//     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+//     if (existingUser) {
+//       return res.status(400).json({ message: 'Username or email already in use' });
+//     }
+
+//     const user = new User({ username, email, password, contactInfo, profilePicture, organization });
+//     await user.save();
+
+//     return res.status(201).json({ message: 'User created successfully', userId: user._id });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
+
+// // Update Profile Picture
+// exports.updateUser = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const updates = req.body;
+
+//     if (req.file) {
+//       updates.profilePicture = req.file.path;
+
+//       // Delete the old profile picture if it exists
+//       const user = await User.findById(userId);
+//       if (user && user.profilePicture) {
+//         fs.unlinkSync(user.profilePicture); // Delete the file from the server
+//       }
+//     }
+
+//     if (updates.password) {
+//       updates.password = await bcrypt.hash(updates.password, 10);
+//     }
+
+//     const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     return res.status(200).json({ message: 'User updated successfully', user });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
+
+
+// exports.getUser = async (req, res) => {
+//     try {
+//       const { userId } = req.params;
+//       const user = await User.findById(userId).select('-password'); // Exclude password
+  
+//       if (!user) {
+//         return res.status(404).json({ message: 'User not found' });
+//       }
+  
+//       // Add the full URL for the profile picture
+//       const fullProfilePictureUrl = user.profilePicture
+//         ? `${req.protocol}://${req.get('host')}/${user.profilePicture}`
+//         : null;
+  
+//       return res.status(200).json({
+//         ...user.toObject(),
+//         profilePicture: fullProfilePictureUrl, // Return the full URL
+//       });
+//     } catch (error) {
+//       return res.status(500).json({ error: error.message });
+//     }
+//   };
+  
+
+  
 // Create User with Profile Picture
 exports.createUser = async (req, res) => {
   try {
-    const { username, email, password, contactInfo, organization } = req.body;
-    const profilePicture = req.file ? req.file.path : null; // Path of the uploaded file
+    const { username, email, password, profilePicture, contactInfo, organization } = req.body;
 
     // Check if the email or username already exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -60,7 +137,15 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: 'Username or email already in use' });
     }
 
-    const user = new User({ username, email, password, contactInfo, profilePicture, organization });
+    // Create a new user
+    const user = new User({
+      username,
+      email,
+      password,
+      contactInfo,
+      profilePicture, // Store the string as-is
+      organization,
+    });
     await user.save();
 
     return res.status(201).json({ message: 'User created successfully', userId: user._id });
@@ -69,27 +154,24 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// Update Profile Picture
+
+// Update User with Profile Picture
 exports.updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const updates = req.body;
 
-    if (req.file) {
-      updates.profilePicture = req.file.path;
-
-      // Delete the old profile picture if it exists
-      const user = await User.findById(userId);
-      if (user && user.profilePicture) {
-        fs.unlinkSync(user.profilePicture); // Delete the file from the server
-      }
-    }
-
+    // Hash password if updated
     if (updates.password) {
       updates.password = await bcrypt.hash(updates.password, 10);
     }
 
-    const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+    // Update the user
+    const user = await User.findByIdAndUpdate(userId, updates, {
+      new: true, // Return the updated document
+      runValidators: true, // Ensure schema validations
+    });
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -101,29 +183,23 @@ exports.updateUser = async (req, res) => {
 };
 
 
+
+// Get User with Profile Picture
 exports.getUser = async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const user = await User.findById(userId).select('-password'); // Exclude password
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Add the full URL for the profile picture
-      const fullProfilePictureUrl = user.profilePicture
-        ? `${req.protocol}://${req.get('host')}/${user.profilePicture}`
-        : null;
-  
-      return res.status(200).json({
-        ...user.toObject(),
-        profilePicture: fullProfilePictureUrl, // Return the full URL
-      });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('-password'); // Exclude password
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  };
-  
+
+    // Simply return the profilePicture as it is since it's a plain string
+    return res.status(200).json(user.toObject());
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 // Delete User
 exports.deleteUser = async (req, res) => {
