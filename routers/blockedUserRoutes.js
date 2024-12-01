@@ -1,16 +1,16 @@
 const express = require('express');
-const blockedUserController = require('../controllers/blockedUserController');
-const adminMiddleware = require('../../UnifyGlitch/middleware/adminMiddleware');
-
 const router = express.Router();
+const { addToBlocklist } = require('../controllers/blockedUserControllers/addToBlocklist');
+const { removeFromBlocklist } = require('../controllers/blockedUserControllers/removeFromBlocklist');
+const { getAllBlockedUsers } = require('../controllers/blockedUserControllers/getAllBlockedUsers');
+const adminMiddleware = require('../../UnifyGlitch/middleware/adminMiddleware');
+// Route to add a user to blocklist
+router.post('/add', adminMiddleware.verifyAdmin, addToBlocklist);
 
-// Add a User to Blocklist (Admin Only)
-router.post('/add', adminMiddleware.verifyAdmin, blockedUserController.addToBlocklist);
+// Route to remove a user from blocklist
+router.delete('/remove', adminMiddleware.verifyAdmin, removeFromBlocklist);
 
-// Remove a User from Blocklist (Admin Only)
-router.post('/remove', adminMiddleware.verifyAdmin, blockedUserController.removeFromBlocklist);
-
-// Get All Blocked Users (Admin Only)
-router.get('/', adminMiddleware.verifyAdmin, blockedUserController.getAllBlockedUsers);
+// Route to get all blocked users
+router.get('/list', adminMiddleware.verifyAdmin, getAllBlockedUsers);
 
 module.exports = router;
